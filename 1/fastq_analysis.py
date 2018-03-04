@@ -11,6 +11,7 @@ plt.switch_backend('agg')
 DEBUG_STEPS = 100000
 MAX_STEPS = 1000000000  # used to terminate early for debug purposes
 GC_PLOT_STEP = 0.01
+EPS = 1e-10
 
 BP_QUALITY_THRESHOLD = 10
 READ_QUALITY_THRESHOLD = 0.5
@@ -58,7 +59,8 @@ class FastqAnalyzer:
                      if q > BP_QUALITY_THRESHOLD]
                 gc = len([c for c in good_qual_seq
                           if c in 'GCgc']) / len(record.seq)
-                self.gc_content[int(gc / GC_PLOT_STEP)] += 1
+                # + EPS to deal with Python's incredible precision
+                self.gc_content[int(gc/GC_PLOT_STEP + EPS)] += 1
                 self.gc_sum += gc
                 self.gc_n_reads += 1
 
