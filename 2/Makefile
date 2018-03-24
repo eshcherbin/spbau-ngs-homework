@@ -1,5 +1,5 @@
 CXX ?= g++
-CXXFLAGS ?= -g -Wall -Wextra -Wshadow -Werror --std=c++17
+CXXFLAGS ?= -O2 -Wall -Wextra -Wshadow -Werror --std=c++17
 
 all: debrujin
 
