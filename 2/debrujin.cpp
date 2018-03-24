@@ -80,7 +80,7 @@ void remove_redundant_node(int v) {
     int e_out = nodes[v].out[0];
     assert(nodes[v].in.size() == 1 && nodes[v].out.size() == 1 && edges[e_in].v != v);
     edges[e_in].u = edges[e_out].u;
-    edges[e_in].sum_kmer_cnt += edges[e_in].sum_kmer_cnt - nodes[v].cnt;
+    edges[e_in].sum_kmer_cnt += edges[e_out].sum_kmer_cnt - nodes[v].cnt;
     edges[e_in].seq += edges[e_out].seq.substr(k);
     nodes[v] = node("");
     edges[e_out] = {-1, -1, "", 0};
@@ -92,6 +92,7 @@ int main(int argc, char **argv) {
     // get arguments
     assert(argc == 3);
     char* fn = argv[1];
+
     k = stoi(argv[2]);
 
     // read and process input
@@ -126,7 +127,7 @@ int main(int argc, char **argv) {
         name << "EDGE_" 
             << i 
             << "_length_" 
-            << e.seq.size() - k + 1
+            << e.seq.size() - k
             << "_cov_"
             << ((double) e.sum_kmer_cnt / (e.seq.size() - k + 1));
         seqan::writeRecord(fasta, name.str(), e.seq);
@@ -145,7 +146,7 @@ int main(int argc, char **argv) {
             << " -> " 
             << e.u
             << " [label=\"length = " 
-            << e.seq.size() - k + 1
+            << e.seq.size() - k
             << "; cov = " 
             << ((double) e.sum_kmer_cnt / (e.seq.size() - k + 1))
             << "\"]\n";
