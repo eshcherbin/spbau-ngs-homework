@@ -9,8 +9,8 @@ debrujin: debrujin.o
 debruijn.o: debrujin.cpp debrujin.hpp utils.hpp
 	$(CXX) debrujin.cpp $(CXXFLAGS) -c -o debrujin.o
 
-graph.png: graph.dot
-	dot -Tpng graph.dot -o graph.png
+graph.svg: graph.dot
+	dot -Tsvg graph.dot -o graph.svg
 
 clean:
 	rm -f *.o debrujin edges.fasta graph.{dot,png}
