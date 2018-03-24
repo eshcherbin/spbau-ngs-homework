@@ -13,6 +13,6 @@ graph.svg: graph.dot
 	dot -Tsvg graph.dot -o graph.svg
 
 clean:
-	rm -f *.o debrujin edges.fasta graph.{dot,png}
+	rm -f *.o debrujin edges.fasta graph.{dot,svg}
 
 .PHONY: clean all graph.png
