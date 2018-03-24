@@ -82,10 +82,11 @@ void remove_redundant_node(int v) {
     assert(nodes[v].in.size() == 1 && nodes[v].out.size() == 1 && edges[e_in].v != v);
     edges[e_in].u = edges[e_out].u;
     edges[e_in].sum_kmer_cnt += edges[e_in].sum_kmer_cnt - nodes[v].cnt;
+    edges[e_in].seq += edges[e_out].seq.substr(k);
     nodes[v] = node("");
-    edges[e_out] = edge();
+    edges[e_out] = {-1, -1, "", 0};
     edges_set.erase({edges[e_out].v, edges[e_out].u});
-    replace(nodes[edges[e_out].u].in.begin(), nodes[edges[e_out].u].in.end(), e_out, e_in);
+    replace(nodes[edges[e_in].u].in.begin(), nodes[edges[e_in].u].in.end(), e_out, e_in);
 }
 
 int main(int argc, char **argv) {
@@ -120,6 +121,9 @@ int main(int argc, char **argv) {
     name << fixed << setprecision(6);
     for (int i = 0; i < (int) n_edges(); ++i) {
         edge &e = edges[i];
+        if (!e.seq.size()) {
+            continue;
+        }
         name << "EDGE_" 
             << i 
             << "_length_" 
@@ -135,6 +139,9 @@ int main(int argc, char **argv) {
     dot << fixed << setprecision(6);
     dot << "digraph debrujin_graph {\n";
     for (edge &e : edges) {
+        if (!e.seq.size()) {
+            continue;
+        }
         dot << e.v 
             << " -> " 
             << e.u
