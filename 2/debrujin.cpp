@@ -12,7 +12,6 @@
 
 using namespace std;
 
-
 int k;
 vector<node> nodes;
 vector<edge> edges;
@@ -81,7 +80,7 @@ void remove_redundant_node(int v) {
     int e_out = nodes[v].out[0];
     assert(nodes[v].in.size() == 1 && nodes[v].out.size() == 1 && edges[e_in].v != v);
     edges[e_in].u = edges[e_out].u;
-    edges[e_in].sum_kmer_cnt += edges[e_in].sum_kmer_cnt - nodes[v].cnt;
+    edges[e_in].sum_kmer_cnt += edges[e_out].sum_kmer_cnt - nodes[v].cnt;
     edges[e_in].seq += edges[e_out].seq.substr(k);
     nodes[v] = node("");
     edges[e_out] = {-1, -1, "", 0};
@@ -110,7 +109,7 @@ int main(int argc, char **argv) {
 
     // remove redundant nodes
     for (int i = 0; i < (int) n_nodes(); ++i) {
-        if (nodes[i].out.size() == 1 && nodes[i].in.size() == 1 && edges[edges[i].v].v != i) {
+        if (nodes[i].out.size() == 1 && nodes[i].in.size() == 1 && edges[i].v != i) {
             remove_redundant_node(i);
         }
     }
