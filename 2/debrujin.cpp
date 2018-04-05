@@ -5,6 +5,7 @@
 #include <cassert>
 #include <sstream>
 #include <utility>
+#include <algorithm>
 #include <unordered_map>
 #include <seqan/seq_io.h>
 #include "debrujin.hpp"
@@ -31,6 +32,10 @@ inline size_t n_nodes() {
 
 inline size_t n_edges() {
     return edges.size();
+}
+
+inline double get_cov(const edge &e) {
+    return ((double) e.sum_kmer_cnt / (e.seq.size() - k + 1));
 }
 
 int add_node(const string& kmer) {
@@ -83,9 +88,43 @@ void remove_redundant_node(int v) {
     edges[e_in].sum_kmer_cnt += edges[e_out].sum_kmer_cnt - nodes[v].cnt;
     edges[e_in].seq += edges[e_out].seq.substr(k);
     nodes[v] = node("");
-    edges[e_out] = {-1, -1, "", 0};
     edges_set.erase({edges[e_out].v, edges[e_out].u});
+    edges[e_out] = {-1, -1, "", 0};
     replace(nodes[edges[e_in].u].in.begin(), nodes[edges[e_in].u].in.end(), e_out, e_in);
+}
+
+// an edge E is considered to be a tip iff its length is less than 2*k and its coverage is less than 0.5*max_cov,
+// where max_cov is the maximum coverage among all edges **incident to the E's other end**.
+bool try_remove_tip(int v) {
+    if (nodes[v].in.size() + nodes[v].out.size() != 1) {
+        return false;
+    }
+    int e_id = nodes[v].in.size() ? nodes[v].in[0] : nodes[v].out[0];
+    edge &e = edges[e_id];
+    int u = e.v == v ? e.u : e.v;
+    double max_cov = get_cov(e);
+    for (int i : nodes[u].in) {
+        max_cov = max(max_cov, get_cov(edges[i]));
+    }
+    for (int i : nodes[u].out) {
+        max_cov = max(max_cov, get_cov(edges[i]));
+    }
+    if ((int) e.seq.size() < 2 * k && get_cov(e) < 0.5 * max_cov) { // check if e is a tip
+        nodes[v] = node("");
+        edges_set.erase({e.v, e.u});
+        edges[e_id] = {-1, -1, "", 0};
+        nodes[u].in.erase(remove(nodes[u].in.begin(), nodes[u].in.end(), e_id), nodes[u].in.end());
+        nodes[u].out.erase(remove(nodes[u].out.begin(), nodes[u].out.end(), e_id), nodes[u].out.end());
+    }
+    return false;
+}
+
+void remove_redundant_nodes() {
+    for (int i = 0; i < (int) n_nodes(); ++i) {
+        if (nodes[i].out.size() == 1 && nodes[i].in.size() == 1 && edges[i].v != i) {
+            remove_redundant_node(i);
+        }
+    }
 }
 
 int main(int argc, char **argv) {
@@ -94,6 +133,8 @@ int main(int argc, char **argv) {
     char* fn = argv[1];
 
     k = stoi(argv[2]);
+
+    bool REMOVE_TIPS_ENABLED = true;
 
     // read and process input
     seqan::SeqFileIn fin(fn);
@@ -109,10 +150,20 @@ int main(int argc, char **argv) {
     }
 
     // remove redundant nodes
-    for (int i = 0; i < (int) n_nodes(); ++i) {
-        if (nodes[i].out.size() == 1 && nodes[i].in.size() == 1 && edges[i].v != i) {
-            remove_redundant_node(i);
-        }
+    remove_redundant_nodes();
+
+    // remove tips
+    if (REMOVE_TIPS_ENABLED) {
+        bool at_least_one_removed;
+        do {
+            at_least_one_removed = false;
+            for (int v = 0; v < (int) n_nodes(); ++v) {
+                if (try_remove_tip(v)) {
+                    at_least_one_removed = true;
+                }
+            }
+        } while (at_least_one_removed);
+        remove_redundant_nodes();
     }
 
     // write to FASTA
@@ -129,7 +180,7 @@ int main(int argc, char **argv) {
             << "_length_" 
             << e.seq.size() - k
             << "_cov_"
-            << ((double) e.sum_kmer_cnt / (e.seq.size() - k + 1));
+            << get_cov(e);
         seqan::writeRecord(fasta, name.str(), e.seq);
         name.str("");
     }
@@ -148,7 +199,7 @@ int main(int argc, char **argv) {
             << " [label=\"length = " 
             << e.seq.size() - k
             << "; cov = " 
-            << ((double) e.sum_kmer_cnt / (e.seq.size() - k + 1))
+            << get_cov(e)
             << "\"]\n";
     }
     dot << "}\n";

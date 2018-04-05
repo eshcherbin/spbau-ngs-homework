@@ -30,4 +30,6 @@ void process_one_read(const string&);
 
 void remove_redundant_node(int);
 
+bool try_remove_tip(int);
+
 #endif
