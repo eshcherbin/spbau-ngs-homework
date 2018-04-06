@@ -121,7 +121,7 @@ bool try_remove_tip(int v) {
 
 void remove_redundant_nodes() {
     for (int i = 0; i < (int) n_nodes(); ++i) {
-        if (nodes[i].out.size() == 1 && nodes[i].in.size() == 1 && edges[i].v != i) {
+        if (nodes[i].out.size() == 1 && nodes[i].in.size() == 1 && nodes[i].in[0] != nodes[i].out[0]) {
             remove_redundant_node(i);
         }
     }
