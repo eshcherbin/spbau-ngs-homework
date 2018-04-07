@@ -21,6 +21,7 @@ using namespace std;
 int k;
 vector<node> nodes;
 vector<edge> edges;
+unordered_map<string, int> kmer_cnt;
 unordered_map<string, int> kmer2node;
 set<pair<int, int>> edges_set;
 
@@ -62,7 +63,7 @@ inline size_t n_edges() {
 }
 
 inline double get_cov(const edge &e) {
-    return ((double) e.sum_kmer_cnt / (e.seq.size() - k + 1));
+    return ((double) e.sum_kmer_cnt / (e.seq.size() - k));
 }
 
 // ------------------
@@ -105,9 +106,15 @@ void process_one_read(const string &read) {
         if (prev != -1) {
             add_edge_pair(prev, cur, nodes[prev].kmer + kmer[kmer.size() - 1]);
         }
-        ++nodes[cur].cnt;
-        ++nodes[comp_node(cur)].cnt;
+        //++nodes[cur].cnt;
+        //++nodes[comp_node(cur)].cnt;
         prev = cur;
+    }
+    for (int i = 0; i <= (int) read.size() - k - 1; ++i) {
+        string kmer = read.substr(i, k + 1);
+        string rev = rev_comp(kmer);
+        ++kmer_cnt[kmer];
+        ++kmer_cnt[rev];
     }
 }
 
@@ -120,7 +127,7 @@ void remove_redundant_node(int v) {
     int e_out = nodes[v].out[0];
     assert(nodes[v].in.size() == 1 && nodes[v].out.size() == 1 && edges[e_in].v != v);
     edges[e_in].u = edges[e_out].u;
-    edges[e_in].sum_kmer_cnt += edges[e_out].sum_kmer_cnt - nodes[v].cnt;
+    edges[e_in].sum_kmer_cnt += edges[e_out].sum_kmer_cnt;
     edges[e_in].seq += edges[e_out].seq.substr(k);
     nodes[v] = node("");
     edges[e_out] = {-1, -1, "", 0};
@@ -290,7 +297,7 @@ int main(int argc, char **argv) {
 
     // calculate initial kmer counts on edges
     for (edge &e : edges) {
-        e.sum_kmer_cnt = nodes[e.v].cnt + nodes[e.u].cnt;
+        e.sum_kmer_cnt = kmer_cnt[e.seq];
     }
 
     // contract graph
