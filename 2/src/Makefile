@@ -6,7 +6,7 @@ all: debrujin
 debrujin: debrujin.o
 	$(CXX) debrujin.o -o debrujin
 
-debruijn.o: debrujin.cpp debrujin.hpp utils.hpp
+debruijn.o: debrujin.cpp debrujin.hpp config.hpp
 	$(CXX) debrujin.cpp $(CXXFLAGS) -c -o debrujin.o
 
 graph.svg: graph.dot
